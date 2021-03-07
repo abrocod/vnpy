@@ -87,7 +87,6 @@ EXCHANGE_VT2IB = {
     Exchange.BATS: "BATS",
     Exchange.IEX: "IEX",
     Exchange.IBKRATS: "IBKRATS",
-    Exchange.OTC: "PINK"
 }
 EXCHANGE_IB2VT = {v: k for k, v in EXCHANGE_VT2IB.items()}
 
@@ -157,13 +156,14 @@ class IbGateway(BaseGateway):
         "TWS地址": "127.0.0.1",
         "TWS端口": 7497,
         "客户号": 1,
-        "交易账户": ""
+        "交易账户": "DU958110"
     }
 
     exchanges = list(EXCHANGE_VT2IB.keys())
 
     def __init__(self, event_engine):
         """"""
+        # self.gateway.write_log("Jinchao IbGateway - init")
         super().__init__(event_engine, "IB")
 
         self.api = IbApi(self)
@@ -175,8 +175,9 @@ class IbGateway(BaseGateway):
         host = setting["TWS地址"]
         port = setting["TWS端口"]
         clientid = setting["客户号"]
-        account = setting["交易账户"]
-
+        # account = setting["交易账户"]
+        account = "DU958110"
+        
         self.api.connect(host, port, clientid, account)
 
     def close(self):
@@ -217,6 +218,7 @@ class IbGateway(BaseGateway):
 
     def query_history(self, req: HistoryRequest):
         """"""
+        # self.gateway.write_log("IBGateway: query_history")
         return self.api.query_history(req)
 
 
@@ -232,6 +234,7 @@ class IbApi(EWrapper):
         super().__init__()
 
         self.gateway = gateway
+        self.gateway.write_log("Jinchao IbApi init - gateway_name: {0}".format(gateway.gateway_name))
         self.gateway_name = gateway.gateway_name
 
         self.status = False
@@ -309,6 +312,7 @@ class IbApi(EWrapper):
         """
         Callback of tick price update.
         """
+        self.gateway.write_log("Jinchao IbAPi tickPrice callback - start")
         super().tickPrice(reqId, tickType, price, attrib)
 
         if tickType not in TICKFIELD_IB2VT:
@@ -330,6 +334,7 @@ class IbApi(EWrapper):
             tick.last_price = (tick.bid_price_1 + tick.ask_price_1) / 2
             tick.datetime = datetime.now(self.local_tz)
         self.gateway.on_tick(copy(tick))
+        self.gateway.write_log("Jinchao IbAPi tickPrice callback - end")
 
     def tickSize(
         self, reqId: TickerId, tickType: TickType, size: int
@@ -337,6 +342,7 @@ class IbApi(EWrapper):
         """
         Callback of tick volume update.
         """
+        self.gateway.write_log("Jinchao IbAPi tickSize callback - start")
         super().tickSize(reqId, tickType, size)
 
         if tickType not in TICKFIELD_IB2VT:
@@ -347,13 +353,15 @@ class IbApi(EWrapper):
         setattr(tick, name, size)
 
         self.gateway.on_tick(copy(tick))
-
+        self.gateway.write_log("Jinchao IbAPi tickSize callback - end")
+        
     def tickString(
         self, reqId: TickerId, tickType: TickType, value: str
     ):  # pylint: disable=invalid-name
         """
         Callback of tick string update.
         """
+        self.gateway.write_log("Jinchao IbAPi tickString callback - start")
         super().tickString(reqId, tickType, value)
 
         if tickType != TickTypeEnum.LAST_TIMESTAMP:
@@ -364,6 +372,7 @@ class IbApi(EWrapper):
         tick.datetime = self.local_tz.localize(dt)
 
         self.gateway.on_tick(copy(tick))
+        self.gateway.write_log("Jinchao IbAPi tickString callback - end")
 
     def orderStatus(  # pylint: disable=invalid-name
         self,
@@ -382,6 +391,7 @@ class IbApi(EWrapper):
         """
         Callback of order status update.
         """
+        self.gateway.write_log("Jinchao IbAPi orderStatus callback - start")
         super().orderStatus(
             orderId,
             status,
@@ -409,6 +419,7 @@ class IbApi(EWrapper):
             order.status = order_status
 
         self.gateway.on_order(copy(order))
+        self.gateway.write_log("Jinchao IbAPi orderStatus callback - end")
 
     def openOrder(  # pylint: disable=invalid-name
         self,
@@ -420,13 +431,14 @@ class IbApi(EWrapper):
         """
         Callback when opening new order.
         """
+        self.gateway.write_log("Jinchao IbAPi openOrder callback - start")
         super().openOrder(
             orderId, ib_contract, ib_order, orderState
         )
 
         orderid = str(orderId)
         order = OrderData(
-            symbol=generate_symbol(ib_contract),
+            symbol=ib_generate_symbol(contract),
             exchange=EXCHANGE_IB2VT.get(
                 ib_contract.exchange, Exchange.SMART),
             type=ORDERTYPE_IB2VT[ib_order.orderType],
@@ -443,6 +455,7 @@ class IbApi(EWrapper):
 
         self.orders[orderid] = order
         self.gateway.on_order(copy(order))
+        self.gateway.write_log("Jinchao IbAPi openOrder callback - end")
 
     def updateAccountValue(  # pylint: disable=invalid-name
         self, key: str, val: str, currency: str, accountName: str
@@ -450,6 +463,7 @@ class IbApi(EWrapper):
         """
         Callback of account update.
         """
+        # self.gateway.write_log("Jinchao IbAPi updateAccountValue callback - start")
         super().updateAccountValue(key, val, currency, accountName)
 
         if not currency or key not in ACCOUNTFIELD_IB2VT:
@@ -464,6 +478,7 @@ class IbApi(EWrapper):
 
         name = ACCOUNTFIELD_IB2VT[key]
         setattr(account, name, float(val))
+        # self.gateway.write_log("Jinchao IbAPi updateAccountValue callback - end")
 
     def updatePortfolio(  # pylint: disable=invalid-name
         self,
@@ -479,6 +494,7 @@ class IbApi(EWrapper):
         """
         Callback of position update.
         """
+        # self.gateway.write_log("Jinchao IbAPi updatePortfolio callback - start")
         super().updatePortfolio(
             contract,
             position,
@@ -518,19 +534,23 @@ class IbApi(EWrapper):
             gateway_name=self.gateway_name,
         )
         self.gateway.on_position(pos)
+        # self.gateway.write_log("Jinchao IbAPi updatePortfolio callback - end")
 
     def updateAccountTime(self, timeStamp: str):  # pylint: disable=invalid-name
         """
         Callback of account update time.
         """
+        # self.gateway.write_log("Jinchao IbAPi updateAccountTime callback - start")
         super().updateAccountTime(timeStamp)
         for account in self.accounts.values():
             self.gateway.on_account(copy(account))
+        # self.gateway.write_log("Jinchao IbAPi updateAccountTime callback - end")
 
     def contractDetails(self, reqId: int, contractDetails: ContractDetails):  # pylint: disable=invalid-name
         """
         Callback of contract data update.
         """
+        self.gateway.write_log("Jinchao IbApi contractDetails callback - start")
         super().contractDetails(reqId, contractDetails)
 
         # Generate symbol from ib contract details
@@ -560,12 +580,16 @@ class IbApi(EWrapper):
             self.contracts[contract.vt_symbol] = contract
             self.save_contract_data()
 
+        self.gateway.write_log("Jinchao IbApi contractDetails callback - end")
+
+
     def execDetails(
         self, reqId: int, contract: Contract, execution: Execution
     ):  # pylint: disable=invalid-name
         """
         Callback of trade data update.
         """
+        self.gateway.write_log("Jinchao IbAPi exceDetails callback - start")
         super().execDetails(reqId, contract, execution)
 
         dt = datetime.strptime(execution.time, "%Y%m%d  %H:%M:%S")
@@ -584,11 +608,13 @@ class IbApi(EWrapper):
         )
 
         self.gateway.on_trade(trade)
+        self.gateway.write_log("Jinchao IbAPi exceDetails callback - end")
 
     def managedAccounts(self, accountsList: str):
         """
         Callback of all sub accountid.
         """
+        self.gateway.write_log("Jinchao IbAPi managedAccounts callback - start")
         super().managedAccounts(accountsList)
 
         if not self.account:
@@ -597,11 +623,13 @@ class IbApi(EWrapper):
 
         self.gateway.write_log(f"当前使用的交易账号为{self.account}")
         self.client.reqAccountUpdates(True, self.account)
+        self.gateway.write_log("Jinchao IbAPi managedAccounts callback - end")
 
     def historicalData(self, reqId: int, ib_bar: IbBarData):
         """
         Callback of history data update.
         """
+        self.gateway.write_log("Jinchao IbApi historicalData callback - start")
         dt = datetime.strptime(ib_bar.date, "%Y%m%d %H:%M:%S")
         dt = self.local_tz.localize(dt)
 
@@ -617,16 +645,20 @@ class IbApi(EWrapper):
             close_price=ib_bar.close,
             gateway_name=self.gateway_name
         )
+        self.gateway.write_log(f"Jinchao - historical bar: {bar}")
 
         self.history_buf.append(bar)
+        self.gateway.write_log("Jinchao IbApi historicalData callback - end")
 
     def historicalDataEnd(self, reqId: int, start: str, end: str):
         """
         Callback of history data finished.
         """
+        self.gateway.write_log("Jinchao IbAPi historicalDataEnd callback - start")
         self.history_condition.acquire()
         self.history_condition.notify()
         self.history_condition.release()
+        self.gateway.write_log("Jinchao IbAPi historicalDataEnd callback - end")
 
     def connect(self, host: str, port: int, clientid: int, account: str):
         """
@@ -635,6 +667,7 @@ class IbApi(EWrapper):
         if self.status:
             return
 
+        self.gateway.write_log("Jinchao IbApi: connect")
         self.clientid = clientid
         self.account = account
         self.client.connect(host, port, clientid)
@@ -650,12 +683,14 @@ class IbApi(EWrapper):
             return
 
         self.status = False
+        self.gateway.write_log("Jinchao IBApi: disconnect")
         self.client.disconnect()
 
     def subscribe(self, req: SubscribeRequest):
         """
         Subscribe tick data update.
         """
+        self.gateway.write_log("Jinchao IbAPi subscribe - start")
         if not self.status:
             return
 
@@ -671,9 +706,12 @@ class IbApi(EWrapper):
         # Extract ib contract detail
         ib_contract = generate_ib_contract(req.symbol, req.exchange)
         if not ib_contract:
+            self.gateway.write_log("Jinchao ib_contract: {0}".format(ib_contract))
             self.gateway.write_log("代码解析失败，请检查格式是否正确")
             return
 
+        self.gateway.write_log("Jinchao IbAPi subscribe - 1")
+        # import pdb; pdb.set_trace();
         # Get contract data from TWS.
         self.reqid += 1
         self.client.reqContractDetails(self.reqid, ib_contract)
@@ -690,11 +728,13 @@ class IbApi(EWrapper):
         )
         self.ticks[self.reqid] = tick
         self.tick_exchange[self.reqid] = req.exchange
+        self.gateway.write_log("Jinchao IbAPi subscribe - end")
 
     def send_order(self, req: OrderRequest):
         """
         Send a new order.
         """
+        self.gateway.write_log("Jinchao IbAPi send_order - start")
         if not self.status:
             return ""
 
@@ -730,19 +770,23 @@ class IbApi(EWrapper):
 
         order = req.create_order_data(str(self.orderid), self.gateway_name)
         self.gateway.on_order(order)
+        self.gateway.write_log("Jinchao IbAPi send_order - end")
         return order.vt_orderid
 
     def cancel_order(self, req: CancelRequest):
         """
         Cancel an existing order.
         """
+        self.gateway.write_log("Jinchao IbAPi cancel_order - start")
         if not self.status:
             return
 
         self.client.cancelOrder(int(req.orderid))
+        self.gateway.write_log("Jinchao IbAPi cancel_order - end")
 
     def query_history(self, req: HistoryRequest):
         """"""
+        self.gateway.write_log("Jinchao IbAPi query_history - start")
         self.history_req = req
 
         self.reqid += 1
@@ -753,19 +797,24 @@ class IbApi(EWrapper):
             end = req.end
             end_str = end.strftime("%Y%m%d %H:%M:%S")
         else:
-            end = datetime.now(self.local_tz)
+            # end = datetime.now(self.local_tz)
+            end = datetime.now()
             end_str = ""
 
+        # import pdb; pdb.set_trace()
         delta = end - req.start
         days = min(delta.days, 180)     # IB only provides 6-month data
         duration = f"{days} D"
         bar_size = INTERVAL_VT2IB[req.interval]
+
+        self.gateway.write_log("Jinchao IbApi: query_history - 1")
 
         if req.exchange == Exchange.IDEALPRO:
             bar_type = "MIDPOINT"
         else:
             bar_type = "TRADES"
 
+        self.gateway.write_log("Jinchao IbApi: query_history - 2")
         self.client.reqHistoricalData(
             self.reqid,
             ib_contract,
@@ -779,18 +828,23 @@ class IbApi(EWrapper):
             []
         )
 
+        self.gateway.write_log("Jinchao IbApi: query_history - 3")
+
         self.history_condition.acquire()    # Wait for async data return
         self.history_condition.wait()
         self.history_condition.release()
 
+        self.gateway.write_log("Jinchao IbApi: query_history - 4")
         history = self.history_buf
         self.history_buf = []       # Create new buffer list
         self.history_req = None
 
+        self.gateway.write_log("Jinchao IbAPi query_history - end")
         return history
 
     def load_contract_data(self):
         """"""
+        self.gateway.write_log("Jinchao IbAPi load_contract_data - start")
         f = shelve.open(self.data_filepath)
         self.contracts = f.get("contracts", {})
         f.close()
@@ -799,12 +853,15 @@ class IbApi(EWrapper):
             self.gateway.on_contract(contract)
 
         self.gateway.write_log("本地缓存合约信息加载成功")
+        self.gateway.write_log("Jinchao IbAPi load_contract_data - end")
 
     def save_contract_data(self):
         """"""
+        self.gateway.write_log("Jinchao IbAPi save_contract_data - start")
         f = shelve.open(self.data_filepath)
         f["contracts"] = self.contracts
         f.close()
+        self.gateway.write_log("Jinchao IbAPi save_contract_data - end")
 
 
 class IbClient(EClient):
@@ -836,14 +893,29 @@ class IbClient(EClient):
 
 def generate_ib_contract(symbol: str, exchange: Exchange) -> Optional[Contract]:
     """"""
+    print("Jinchao generate_ib_contract - start")
     try:
         fields = symbol.split(JOIN_SYMBOL)
+        # self.gateway.write_log(fields[0])
+        # self.gateway.write_log(fields[-1])
+        # self.gateway.write_log(fields[-2])
 
+        # ib_contract = Contract()
+        # self.gateway.write_log("Jinchao within generate_ib_contract - 2")
+        # ib_contract.exchange = EXCHANGE_VT2IB[exchange]
+        # self.gateway.write_log("Jinchao within generate_ib_contract - 3")
+        
+        # ib_contract.secType = "STK" #fields[-1]
+        # ib_contract.currency = "USD" #fields[-2]
+        # ib_contract.symbol = fields[0]
+        # self.gateway.write_log("Jinchao within generate_ib_contract - 4: ", ib_contract)
+        
         ib_contract = Contract()
-        ib_contract.exchange = EXCHANGE_VT2IB[exchange]
-        ib_contract.secType = fields[-1]
-        ib_contract.currency = fields[-2]
-        ib_contract.symbol = fields[0]
+        ib_contract.symbol = "AAPL"
+        ib_contract.secType = "STK" #fields[-1]
+        ib_contract.currency = "USD" #fields[-2]
+        ib_contract.exchange = "SMART"
+        ib_contract.primaryExchange = "NASDAQ"
 
         if ib_contract.secType in ["FUT", "OPT", "FOP"]:
             ib_contract.lastTradeDateOrContractMonth = fields[1]
@@ -858,12 +930,14 @@ def generate_ib_contract(symbol: str, exchange: Exchange) -> Optional[Contract]:
             ib_contract.multiplier = int(fields[4])
     except IndexError:
         ib_contract = None
-
+    
+    print("Jinchao generate_ib_contract - end")
     return ib_contract
 
 
 def generate_symbol(ib_contract: Contract) -> str:
     """"""
+    print("Jinchao generate_symbol - start")
     fields = [ib_contract.symbol]
 
     if ib_contract.secType in ["FUT", "OPT", "FOP"]:
@@ -878,5 +952,6 @@ def generate_symbol(ib_contract: Contract) -> str:
     fields.append(ib_contract.secType)
 
     symbol = JOIN_SYMBOL.join(fields)
+    print("Jinchao generate_symbol - end")
 
     return symbol

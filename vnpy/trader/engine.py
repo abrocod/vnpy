@@ -209,7 +209,7 @@ class MainEngine:
 
     def query_history(self, req: HistoryRequest, gateway_name: str) -> Optional[List[BarData]]:
         """
-        Send cancel order request to a specific gateway.
+        Send cancel order request to a specific gateway. - L: ???
         """
         gateway = self.get_gateway(gateway_name)
         if gateway:
@@ -266,6 +266,8 @@ class LogEngine(BaseEngine):
             return
 
         self.level: int = SETTINGS["log.level"]
+        self.console_logging_level: int = 40
+        self.file_logging_level: int = 20
 
         self.logger: Logger = logging.getLogger("VN Trader")
         self.logger.setLevel(self.level)
@@ -296,7 +298,7 @@ class LogEngine(BaseEngine):
         Add console output of log.
         """
         console_handler = logging.StreamHandler()
-        console_handler.setLevel(self.level)
+        console_handler.setLevel(self.console_logging_level)
         console_handler.setFormatter(self.formatter)
         self.logger.addHandler(console_handler)
 
@@ -304,15 +306,16 @@ class LogEngine(BaseEngine):
         """
         Add file output of log.
         """
-        today_date = datetime.now().strftime("%Y%m%d")
+        today_date = datetime.now().strftime("%Y-%m-%d=%H-%M")
         filename = f"vt_{today_date}.log"
         log_path = get_folder_path("log")
         file_path = log_path.joinpath(filename)
+        print("Jinchao LogEngine - log file path: ", file_path)
 
         file_handler = logging.FileHandler(
             file_path, mode="a", encoding="utf8"
         )
-        file_handler.setLevel(self.level)
+        file_handler.setLevel(self.file_logging_level)
         file_handler.setFormatter(self.formatter)
         self.logger.addHandler(file_handler)
 

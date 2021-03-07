@@ -17,8 +17,9 @@ def convert_tz(dt: datetime) -> datetime:
     """
     Convert timezone of datetime object to DB_TZ.
     """
-    dt = dt.astimezone(DB_TZ)
-    return dt.replace(tzinfo=None)
+    # dt = dt.astimezone(DB_TZ)
+    # return dt.replace(tzinfo=None)
+    return dt
 
 
 @dataclass
@@ -45,6 +46,7 @@ class BaseDatabase(ABC):
         """
         Save bar data into database.
         """
+        print("Jinchao database.py: BaseDataBase: save_bar_data")
         pass
 
     @abstractmethod
@@ -52,6 +54,7 @@ class BaseDatabase(ABC):
         """
         Save tick data into database.
         """
+        print("Jinchao database.py: BaseDataBase: save_tick_data")
         pass
 
     @abstractmethod

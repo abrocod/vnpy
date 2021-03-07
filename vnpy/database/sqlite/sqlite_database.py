@@ -125,12 +125,14 @@ class SqliteDatabase(BaseDatabase):
 
     def __init__(self) -> None:
         """"""
+        print("Jinchao SqliteDatabase - init")
         self.db = db
         self.db.connect()
         self.db.create_tables([DbBarData, DbTickData, DbBarOverview])
 
     def save_bar_data(self, bars: List[BarData]) -> bool:
         """"""
+        print("Jinchao SqliteDatabase - save_bar_data")
         # Store key parameters
         bar = bars[0]
         symbol = bar.symbol
@@ -185,18 +187,22 @@ class SqliteDatabase(BaseDatabase):
 
     def save_tick_data(self, ticks: List[TickData]) -> bool:
         """"""
+        print("Jinchao SqliteDatabase - save_tick_data")
         # Convert bar object to dict and adjust timezone
         data = []
 
         for tick in ticks:
             tick.datetime = convert_tz(tick.datetime)
-
-            d = tick.__dict__
-            d["exchange"] = d["exchange"].value
-            d["interval"] = d["interval"].value
-            d.pop("gateway_name")
-            d.pop("vt_symbol")
-            data.append(d)
+            try:
+                d = tick.__dict__
+                d["exchange"] = d["exchange"].value
+                d["interval"] = d["interval"].value
+                d.pop("gateway_name")
+                d.pop("vt_symbol")
+                data.append(d)
+            except:
+                print(f"error in saving tick data {tick}, {d}")
+                continue
 
         # Upsert data into database
         with self.db.atomic():
@@ -212,6 +218,7 @@ class SqliteDatabase(BaseDatabase):
         end: datetime
     ) -> List[BarData]:
         """"""
+        print("Jinchao SqliteDatabase - load_bar_data")
         s: ModelSelect = (
             DbBarData.select().where(
                 (DbBarData.symbol == symbol)
@@ -242,6 +249,7 @@ class SqliteDatabase(BaseDatabase):
         end: datetime
     ) -> List[TickData]:
         """"""
+        print("Jinchao SqliteDatabase - load_tick_data")
         s: ModelSelect = (
             DbTickData.select().where(
                 (DbTickData.symbol == symbol)
@@ -269,6 +277,7 @@ class SqliteDatabase(BaseDatabase):
         interval: Interval
     ) -> int:
         """"""
+        print("Jinchao SqliteDatabase - delete_bar_data")
         d: ModelDelete = DbBarData.delete().where(
             (DbBarData.symbol == symbol)
             & (DbBarData.exchange == exchange.value)
@@ -292,6 +301,7 @@ class SqliteDatabase(BaseDatabase):
         exchange: Exchange
     ) -> int:
         """"""
+        print("Jinchao SqliteDatabase - delete_tick_data")
         d: ModelDelete = DbTickData.delete().where(
             (DbTickData.symbol == symbol)
             & (DbTickData.exchange == exchange.value)
@@ -303,6 +313,7 @@ class SqliteDatabase(BaseDatabase):
         """
         Return data avaible in database.
         """
+        print("Jinchao SqliteDatabase - get_bar_overview")
         # Init bar overview for old version database
         data_count = DbBarData.select().count()
         overview_count = DbBarOverview.select().count()
@@ -321,6 +332,7 @@ class SqliteDatabase(BaseDatabase):
         """
         Init overview table if not exists.
         """
+        print("Jinchao SqliteDatabase - init_bar_overview")
         s: ModelSelect = (
             DbBarData.select(
                 DbBarData.symbol,

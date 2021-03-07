@@ -129,6 +129,7 @@ class MongodbDatabase(BaseDatabase):
 
     def __init__(self) -> None:
         """"""
+        print("Jinchao MongodbDatabase - init")
         database = SETTINGS["database.database"]
         host = SETTINGS["database.host"]
         port = SETTINGS["database.port"]
@@ -152,6 +153,7 @@ class MongodbDatabase(BaseDatabase):
 
     def save_bar_data(self, bars: List[BarData]) -> bool:
         """"""
+        print("Jinchao MongodbDatabase save_bar_data")
         # Store key parameters
         bar = bars[0]
         symbol = bar.symbol
@@ -207,6 +209,7 @@ class MongodbDatabase(BaseDatabase):
 
     def save_tick_data(self, ticks: List[TickData]) -> bool:
         """"""
+        print("Jinchao MongodbDatabase save_tick_data")
         for tick in ticks:
             tick.datetime = convert_tz(tick.datetime)
 
@@ -232,6 +235,7 @@ class MongodbDatabase(BaseDatabase):
         end: datetime
     ) -> List[BarData]:
         """"""
+        print("Jinchao MongodbDatabase load_bar_data")
         s: QuerySet = DbBarData.objects(
             symbol=symbol,
             exchange=exchange.value,
@@ -260,6 +264,7 @@ class MongodbDatabase(BaseDatabase):
         end: datetime
     ) -> List[TickData]:
         """"""
+        print("Jinchao MongodbDatabase load_tick_data")
         s: QuerySet = DbTickData.objects(
             symbol=symbol,
             exchange=exchange.value,
@@ -285,6 +290,7 @@ class MongodbDatabase(BaseDatabase):
         interval: Interval
     ) -> int:
         """"""
+        print("Jinchao MongodbDatabase delete_bar_data")
         count = DbBarData.objects(
             symbol=symbol,
             exchange=exchange.value,
@@ -306,6 +312,7 @@ class MongodbDatabase(BaseDatabase):
         exchange: Exchange
     ) -> int:
         """"""
+        print("Jinchao MongodbDatabase delete_tick_data")
         count = DbTickData.objects(
             symbol=symbol,
             exchange=exchange.value
@@ -316,6 +323,7 @@ class MongodbDatabase(BaseDatabase):
         """
         Return data avaible in database.
         """
+        print("Jinchao MongodbDatabase get_bar_overview")
         # Init bar overview for old version database
         data_count = DbBarData.objects.count()
         overview_count = DbBarOverview.objects.count()
@@ -334,6 +342,7 @@ class MongodbDatabase(BaseDatabase):
         """
         Init overview table if not exists.
         """
+        print("Jinchao MongodbDatabase init_bar_overview")
         s: QuerySet = (
             DbBarData.objects.aggregate({
                 "$group": {

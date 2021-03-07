@@ -129,12 +129,14 @@ class PostgresqlDatabase(BaseDatabase):
 
     def __init__(self) -> None:
         """"""
+        print("Jinchao PostgresqlDatabase - init")
         self.db = db
         self.db.connect()
         self.db.create_tables([DbBarData, DbTickData, DbBarOverview])
 
     def save_bar_data(self, bars: List[BarData]) -> bool:
         """"""
+        print("Jinchao PostgresqlDatabase - save_bar_data")
         # Store key parameters
         bar = bars[0]
         symbol = bar.symbol
@@ -198,6 +200,7 @@ class PostgresqlDatabase(BaseDatabase):
     def save_tick_data(self, ticks: List[TickData]) -> bool:
         """"""
         # Convert bar object to dict and adjust timezone
+        print("Jinchao PostgresqlDatabase - save_tick_data")
         data = []
 
         for tick in ticks:
@@ -231,6 +234,7 @@ class PostgresqlDatabase(BaseDatabase):
         end: datetime
     ) -> List[BarData]:
         """"""
+        print("Jinchao PostgresqlDatabase - load_bar_data")
         s: ModelSelect = (
             DbBarData.select().where(
                 (DbBarData.symbol == symbol)
@@ -261,6 +265,7 @@ class PostgresqlDatabase(BaseDatabase):
         end: datetime
     ) -> List[TickData]:
         """"""
+        print("Jinchao PostgresqlDatabase - load_tick_data")
         s: ModelSelect = (
             DbTickData.select().where(
                 (DbTickData.symbol == symbol)
@@ -288,6 +293,7 @@ class PostgresqlDatabase(BaseDatabase):
         interval: Interval
     ) -> int:
         """"""
+        print("Jinchao PostgresqlDatabase - delete_bar_data")
         d: ModelDelete = DbBarData.delete().where(
             (DbBarOverview.symbol == symbol)
             & (DbBarOverview.exchange == exchange.value)
@@ -310,6 +316,7 @@ class PostgresqlDatabase(BaseDatabase):
         exchange: Exchange
     ) -> int:
         """"""
+        print("Jinchao PostgresqlDatabase - delete_tick_data")
         d: ModelDelete = DbTickData.delete().where(
             (DbTickData.symbol == symbol)
             & (DbTickData.exchange == exchange.value)
@@ -321,6 +328,7 @@ class PostgresqlDatabase(BaseDatabase):
         """
         Return data avaible in database.
         """
+        print("Jinchao PostgresqlDatabase - get_bar_overview")
         # Init bar overview for old version database
         data_count = DbBarData.select().count()
         overview_count = DbBarOverview.select().count()
@@ -339,6 +347,7 @@ class PostgresqlDatabase(BaseDatabase):
         """
         Init overview table if not exists.
         """
+        print("Jinchao PostgresqlDatabase - init_bar_overview")
         s: ModelSelect = (
             DbBarData.select(
                 DbBarData.symbol,

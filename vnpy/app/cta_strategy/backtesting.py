@@ -124,27 +124,27 @@ class BacktestingEngine:
         self.strategy = None
         self.tick: TickData
         self.bar: BarData
-        self.datetime = None
+        self.datetime = None # ???
 
-        self.interval = None
-        self.days = 0
+        self.interval = None  # ???
+        self.days = 0   # ???
         self.callback = None
-        self.history_data = []
+        self.history_data = []  # L: 保存历史数据
 
         self.stop_order_count = 0
         self.stop_orders = {}
         self.active_stop_orders = {}
 
         self.limit_order_count = 0
-        self.limit_orders = {}
+        self.limit_orders = {}  # 
         self.active_limit_orders = {}
 
         self.trade_count = 0
-        self.trades = {}
+        self.trades = {}  # L: 保存交易记录
 
         self.logs = []
 
-        self.daily_results = {}
+        self.daily_results = {} # L: 保存交易动作和结果
         self.daily_df = None
 
     def clear_data(self):
@@ -280,15 +280,15 @@ class BacktestingEngine:
         ix = 0
 
         for ix, data in enumerate(self.history_data):
-            if self.datetime and data.datetime.day != self.datetime.day:
+            if self.datetime and data.datetime.day != self.datetime.day: # ???
                 day_count += 1
-                if day_count >= self.days:
+                if day_count >= self.days:  # ???
                     break
 
             self.datetime = data.datetime
 
             try:
-                self.callback(data)
+                self.callback(data)  # ???
             except Exception:
                 self.output("触发异常，回测终止")
                 self.output(traceback.format_exc())

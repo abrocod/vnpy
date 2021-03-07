@@ -28,10 +28,13 @@ SETTINGS: Dict[str, Any] = {
     "rqdata.password": "",
 
     "database.timezone": get_localzone().zone,
-    "database.driver": "sqlite",                # see database.Driver
-    "database.database": "database.db",         # for sqlite, use this as filepath
+    # "database.driver": "sqlite",                # see database.Driver
+    "database.driver": "mongodb", 
+    # "database.database": "database.db",         # for sqlite, use this as filepath
+    "database.database": "mongo-test-1",
     "database.host": "localhost",
-    "database.port": 3306,
+    # "database.port": 3306,
+    "database.port": 27017,
     "database.user": "root",
     "database.password": "",
     "database.authentication_source": "admin",  # for mongodb
