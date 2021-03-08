@@ -31,7 +31,7 @@ SETTINGS: Dict[str, Any] = {
     # "database.driver": "sqlite",                # see database.Driver
     "database.driver": "mongodb", 
     # "database.database": "database.db",         # for sqlite, use this as filepath
-    "database.database": "mongo-test-1",
+    "database.database": "fr-data",
     "database.host": "localhost",
     # "database.port": 3306,
     "database.port": 27017,

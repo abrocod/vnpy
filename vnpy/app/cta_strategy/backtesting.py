@@ -80,7 +80,7 @@ class OptimizationSetting:
         keys = self.params.keys()
         values = self.params.values()
         products = list(product(*values))
-
+        print("the total combo of bt setting is: ", len(products))
         settings = []
         for p in products:
             setting = dict(zip(keys, p))
@@ -185,7 +185,7 @@ class BacktestingEngine:
         inverse: bool = False,
         risk_free: float = 0
     ):
-        """"""
+        """ bt setting, not strategy setting """
         self.mode = mode
         self.vt_symbol = vt_symbol
         self.interval = Interval(interval)
@@ -205,7 +205,7 @@ class BacktestingEngine:
         self.risk_free = risk_free
 
     def add_strategy(self, strategy_class: type, setting: dict):
-        """"""
+        """ can only add one strategy """
         self.strategy_class = strategy_class
         self.strategy = strategy_class(
             self, strategy_class.__name__, self.vt_symbol, setting
@@ -586,7 +586,7 @@ class BacktestingEngine:
         fig.show()
 
     def run_optimization(self, optimization_setting: OptimizationSetting, output=True):
-        """"""
+        """ with multiprocessing """
         # Get optimization setting and target
         settings = optimization_setting.generate_setting()
         target_name = optimization_setting.target_name
@@ -602,7 +602,7 @@ class BacktestingEngine:
         # Use multiprocessing pool for running backtesting with different setting
         # Force to use spawn method to create new process (instead of fork on Linux)
         ctx = multiprocessing.get_context("spawn")
-        pool = ctx.Pool(multiprocessing.cpu_count())
+        pool = ctx.Pool(multiprocessing.cpu_count() - 2)
 
         results = []
         for setting in settings:
@@ -639,7 +639,7 @@ class BacktestingEngine:
         return result_values
 
     def run_ga_optimization(self, optimization_setting: OptimizationSetting, population_size=100, ngen_size=30, output=True):
-        """"""
+        """ without multiprocessing """
         # Clear lru_cache before running ga optimization
         _ga_optimize.cache_clear()
 

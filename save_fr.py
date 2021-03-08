@@ -7,11 +7,14 @@ from vnpy.trader.constant import Exchange, Interval
 from vnpy.trader.database import database_manager
 
 
-def load_fr(file_path, symbol):
-    header_list = ['DateTime', 'Open', 'High', 'Low', 'Close', 'Volume']
+def load_fr(file_path: str, 
+            symbol: str, 
+            interval: Interval, 
+            exchange: Exchange):
+    fr_header_list = ['DateTime', 'Open', 'High', 'Low', 'Close', 'Volume']
     es_df = pd.read_csv(file_path, 
-                        header=None,
-                        names = header_list)
+                        header=0,
+                        names=fr_header_list)
 
     # --- convert string time into timestamp format ----
     # use pandas datetime: output has pandas format
@@ -20,13 +23,6 @@ def load_fr(file_path, symbol):
 
     # use native python datetime lib: should be fine ... debug
     # es_df['DateTime'] = es_df['DateTime'].apply(lambda x: datetime.datetime.strptime(x, '%Y-%m-%d %H:%M:%S'))
-
-    # print out a sample:
-    # for ix, row in es_df.iloc[0:30].iterrows():
-    #     print(row.DateTime, row.Open)
-
-    exchange = Exchange.CME
-    interval = Interval.HOUR
     barlist = []
     for ix, row in es_df.iterrows():
         # print(ix, row)
@@ -44,30 +40,42 @@ def load_fr(file_path, symbol):
         )
         # print(bar)
         barlist.append(bar)
+    print("Finish reading data, start saving to mongodb")
 
     database_manager.save_bar_data(barlist)
+    print("Finish saving data to mongodb")
 
 
-def read_fr(symbol):
-    start = datetime.strptime('20010901', "%Y%m%d")
-    end = datetime.strptime('20210220', "%Y%m%d")
+def read_fr(symbol: str, 
+            interval: Interval, 
+            exchange: Exchange,
+            start,
+            end):
 
     read_barlist = database_manager.load_bar_data(
-        symbol="ES",
-        exchange=Exchange.CME,
+        symbol=symbol,
+        exchange=exchange,
         start=start,
         end=end,
-        interval=Interval.HOUR
+        interval=interval
     )
 
-    print(len(read_barlist))
-
+    print("number of bar founds: ", len(read_barlist))
 
 
 if __name__ == "__main__":
     symbol = "ES"
-    es_hour_file = "../FirstRateData/futures-active_1hour_4iey2/ES_continuous_adjusted_1hour.txt"
-    es_min_file = "../FirstRateData/futures-active_1min_4zl13/ES_continuous_adjusted_1min.txt"
-    load_fr(es_min_file, symbol)
-    print("finish saving, start reading")
-    # read_fr(symbol)
+    exchange = Exchange.CME
+    # interval = Interval.HOUR
+    interval = Interval.MINUTE
+    
+    # es_hour_file = "../FirstRateData/futures-active_1hour_4iey2/ES_continuous_adjusted_1hour.txt"
+    es_min_file = "../FirstRateData/futures-active_1min_4zl13/ES_continuous_adjusted_1min_1yrs.txt"
+    
+    # load data from csv to mongodb
+    load_fr(es_min_file, symbol, interval, exchange)
+
+    # read data
+    # start = datetime.strptime('20010901', "%Y%m%d")
+    # end = datetime.strptime('20210220', "%Y%m%d")
+    # read_fr(symbol, interval, exchange, start, end)
