@@ -24,65 +24,87 @@ class FRManagerEngine(BaseEngine):
         """"""
         super().__init__(main_engine, event_engine, APP_NAME)
 
-    def import_data_from_csv(
+    def import_from_csv_to_mongodb(
         self,
         file_path: str,
         symbol: str,
         exchange: Exchange,
-        interval: Interval,
-        datetime_head: str,
-        open_head: str,
-        high_head: str,
-        low_head: str,
-        close_head: str,
-        volume_head: str,
-        open_interest_head: str,
-        datetime_format: str
-    ) -> Tuple:
-        """"""
-        with open(file_path, "rt") as f:
-            buf = [line.replace("\0", "") for line in f]
+        interval: Interval
+    ):
+        """ Import data from csv by calling mongodb_database engine. 
+            This method is slow since it insert document one by one. 
+        """
+        fr_header_list = ['DateTime', 'Open', 'High', 'Low', 'Close', 'Volume']
+        es_df = pd.read_csv(file_path, 
+                            header=None,
+                            names=fr_header_list)
 
-        reader = csv.DictReader(buf, delimiter=",")
+        # convert string time into timestamp format.
+        # consider use python native datetime to avoid tz conversion error.
+        es_df['DateTime'] =  pd.to_datetime(es_df['DateTime'])
+        # es_df['DateTime'] = es_df['DateTime'].apply(lambda x: datetime.datetime.strptime(x, '%Y-%m-%d %H:%M:%S'))
 
-        bars = []
-        start = None
-        count = 0
-
-        for item in reader:
-            if datetime_format:
-                dt = datetime.strptime(item[datetime_head], datetime_format)
-            else:
-                dt = datetime.fromisoformat(item[datetime_head])
-
-            open_interest = item.get(open_interest_head, 0)
-
+        barlist = []
+        for ix, row in es_df.iterrows():
+            # print(ix, row)
             bar = BarData(
                 symbol=symbol,
                 exchange=exchange,
-                datetime=dt,
                 interval=interval,
-                volume=float(item[volume_head]),
-                open_price=float(item[open_head]),
-                high_price=float(item[high_head]),
-                low_price=float(item[low_head]),
-                close_price=float(item[close_head]),
-                open_interest=float(open_interest),
-                gateway_name="DB",
+                datetime=row.DateTime,
+                open_price=row.Open,
+                high_price=row.High,
+                low_price=row.Low,
+                close_price=row.Close,
+                volume=row.Volume,
+                gateway_name="FR"
             )
+            barlist.append(bar)
+        print("Finish reading data, start saving to mongodb")
 
-            bars.append(bar)
+        database_manager.save_bar_data(barlist)
+        print("Finish saving data to mongodb")
 
-            # do some statistics
-            count += 1
-            if not start:
-                start = bar.datetime
 
-        # insert into database
-        database_manager.save_bar_data(bars)
+    def bulk_import_from_csv_to_mongodb(
+        self,
+        file_path: str,
+        symbol: str,
+        exchange: Exchange,
+        interval: Interval
+    ):
+        """ Use pymongo instead of mongoengine - for bulk import from csv """
+        fr_header_list = ['DateTime', 'Open', 'High', 'Low', 'Close', 'Volume']
+        es_df = pd.read_csv(file_path, 
+                            header=None,
+                            names=fr_header_list)
 
-        end = bar.datetime
-        return start, end, count
+        # convert string time into timestamp format.
+        # consider use python native datetime to avoid tz conversion error.
+        es_df['DateTime'] =  pd.to_datetime(es_df['DateTime'])
+        # es_df['DateTime'] = es_df['DateTime'].apply(lambda x: datetime.datetime.strptime(x, '%Y-%m-%d %H:%M:%S'))
+
+        barlist = []
+        for ix, row in es_df.iterrows():
+            # print(ix, row)
+            bar = BarData(
+                symbol=symbol,
+                exchange=exchange,
+                interval=interval,
+                datetime=row.DateTime,
+                open_price=row.Open,
+                high_price=row.High,
+                low_price=row.Low,
+                close_price=row.Close,
+                volume=row.Volume,
+                gateway_name="FR"
+            )
+            barlist.append(bar)
+        print("Finish reading data, start saving to mongodb")
+
+        database_manager.save_bar_data(barlist)
+        print("Finish saving data to mongodb")
+
 
     def output_data_to_csv(
         self,

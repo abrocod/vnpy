@@ -29,7 +29,7 @@ interval = Interval.MINUTE
 es_min_file = "../FirstRateData/futures-active_1min_4zl13/ES_continuous_adjusted_1min_1yrs.txt"
     
 
-fr_engine.import_fr_data_from_csv(file_path=es_min_file, symbol=symbol, 
+fr_engine.import_fr_data_from_csv_to_mongodb(file_path=es_min_file, symbol=symbol, 
                                 interval=interval, exchange=exchange)
 
 

@@ -84,47 +84,6 @@ class ManagerEngine(BaseEngine):
         end = bar.datetime
         return start, end, count
 
-    def import_fr_data_from_csv(
-        self,
-        file_path: str, 
-        symbol: str, 
-        interval: Interval, 
-        exchange: Exchange
-    ) -> None:
-        """ Load first rate data """
-        fr_header_list = ['DateTime', 'Open', 'High', 'Low', 'Close', 'Volume']
-        es_df = pd.read_csv(file_path, 
-                            header=0,
-                            names=fr_header_list)
-        # --- convert string time into timestamp format ----
-        # use pandas datetime: output has pandas format
-        #   has problem with timezone conversion 
-        es_df['DateTime'] =  pd.to_datetime(es_df['DateTime'])
-
-        # use native python datetime lib: should be fine ... debug
-        # es_df['DateTime'] = es_df['DateTime'].apply(lambda x: datetime.datetime.strptime(x, '%Y-%m-%d %H:%M:%S'))
-        barlist = []
-        for ix, row in es_df.iterrows():
-            # print(ix, row)
-            bar = BarData(
-                symbol=symbol,
-                exchange=exchange,
-                interval=interval,
-                datetime=row.DateTime,
-                open_price=row.Open,
-                high_price=row.High,
-                low_price=row.Low,
-                close_price=row.Close,
-                volume=row.Volume,
-                gateway_name="FR"
-            )
-            # print(bar)
-            barlist.append(bar)
-        print("Finish reading data, start saving to mongodb")
-
-        database_manager.save_bar_data(barlist)
-        print("Finish saving data to mongodb")
-
     def output_data_to_csv(
         self,
         file_path: str,

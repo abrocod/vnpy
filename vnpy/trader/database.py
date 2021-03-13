@@ -16,9 +16,10 @@ DB_TZ = timezone(SETTINGS["database.timezone"])
 def convert_tz(dt: datetime) -> datetime:
     """
     Convert timezone of datetime object to DB_TZ.
+    This datatime need to be python datetime. Cannot be pandas datetime.
     """
-    # dt = dt.astimezone(DB_TZ)
-    # return dt.replace(tzinfo=None)
+    dt = dt.astimezone(DB_TZ)
+    return dt.replace(tzinfo=None)
     return dt
 
 
